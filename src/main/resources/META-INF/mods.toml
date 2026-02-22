@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+issueTrackerURL="https://github.com/Mrbysco/RadialAggroIndicator/issues"
+license="MIT"
+
+[[mods]]
+modId="radialaggro"
+version="${file.jarVersion}"
+displayName="Radial Aggro Indicator"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/radial-aggro-indicator"
+authors="Mrbysco"
+credits="NekoMaster for the idea"
+description='''
+Shows a radial indicator on screen to show the direction of the mob that is currently targeting the player.
+'''
+[[dependencies.radialaggro]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20,1.21)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.radialaggro]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
