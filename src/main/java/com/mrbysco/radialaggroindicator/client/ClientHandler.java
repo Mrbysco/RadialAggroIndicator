@@ -1,7 +1,6 @@
 package com.mrbysco.radialaggroindicator.client;
 
 import com.mrbysco.radialaggroindicator.AggroIndicatorMod;
-import com.mrbysco.radialaggroindicator.config.IndicatorConfig;
 import com.mrbysco.radialaggroindicator.network.PacketHandler;
 import com.mrbysco.radialaggroindicator.network.message.AggroFinishedPacket;
 import net.minecraft.client.Minecraft;
@@ -21,10 +20,8 @@ public class ClientHandler {
 		if (event.phase == TickEvent.Phase.START) return;
 		if (mc.player == null || mc.level == null) return;
 		HudHandler.activeIndicators.removeIf(indicator -> {
-			// Check if same dimension
 			if (indicator.ticks() <= 0 || !indicator.isAlive() ||
-					mc.level.dimension() != indicator.dimension() ||
-					(IndicatorConfig.COMMON.hideInView.get() && indicator.inView(mc.player))
+					mc.level.dimension() != indicator.dimension()
 			) {
 				if (mc.getConnection() != null) {
 					PacketHandler.CHANNEL.send(PacketDistributor.SERVER.noArg(),

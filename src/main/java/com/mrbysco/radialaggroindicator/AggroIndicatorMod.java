@@ -59,7 +59,6 @@ public class AggroIndicatorMod {
 	public void onAggro(LivingChangeTargetEvent event) {
 		if (event.getEntity() instanceof Mob mob && !mob.level().isClientSide()) {
 			if (event.getNewTarget() instanceof Player player) {
-				if (IndicatorConfig.COMMON.hideInView.get() && player.hasLineOfSight(mob)) return;
 				if (IndicatorConfig.COMMON.initialAggro.get() && mob.getTarget() == event.getOriginalTarget()) return;
 				if (isInvalid(mob.getType())) return;
 

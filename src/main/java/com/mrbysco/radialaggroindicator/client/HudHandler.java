@@ -6,6 +6,7 @@ import com.mrbysco.radialaggroindicator.config.IndicatorConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.FastColor;
@@ -80,7 +81,7 @@ public class HudHandler {
 
 			for (AggroIndicator indicator : activeIndicators) {
 				if (!indicator.isAlive()) continue;
-				if (IndicatorConfig.COMMON.hideInView.get() && indicator.inView(player)) return;
+				if (IndicatorConfig.COMMON.hideInView.get() && indicator.hideVisible(minecraft.levelRenderer.getFrustum())) return;
 
 				renderIndicator(guiGraphics, minecraft, player, indicator, screenWidth, screenHeight);
 			}
@@ -273,8 +274,14 @@ public class HudHandler {
 			this.ticks = ticks;
 		}
 
-		public boolean inView(Player player) {
-			return player.hasLineOfSight(entity);
+		public boolean hideVisible(Frustum frustum) {
+			boolean hideVisible = false;
+			if (IndicatorConfig.COMMON.hideInView.get()) {
+				if (frustum.isVisible(entity.getBoundingBox())) {
+					hideVisible = true;
+				}
+			}
+			return hideVisible;
 		}
 
 		@Override
