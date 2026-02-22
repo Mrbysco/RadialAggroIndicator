@@ -3,7 +3,8 @@ package com.mrbysco.radialaggroindicator;
 import com.mojang.logging.LogUtils;
 import com.mrbysco.radialaggroindicator.config.IndicatorConfig;
 import com.mrbysco.radialaggroindicator.network.PacketHandler;
-import com.mrbysco.radialaggroindicator.network.message.IndicateAggroPacket;
+import com.mrbysco.radialaggroindicator.network.message.IndicateAggroPayload;
+import com.mrbysco.radialaggroindicator.network.message.RemoveAggroPayload;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -11,19 +12,20 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -34,22 +36,20 @@ public class AggroIndicatorMod {
 	public static final String MOD_ID = "radialaggro";
 	public static final Logger LOGGER = LogUtils.getLogger();
 
-	public static final TagKey<EntityType<?>> UNFADING = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(MOD_ID, "unfading"));
-	public static final TagKey<EntityType<?>> BLACKLIST = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(MOD_ID, "blacklist"));
+	public static final TagKey<EntityType<?>> UNFADING = TagKey.create(Registries.ENTITY_TYPE, modLoc("unfading"));
+	public static final TagKey<EntityType<?>> BLACKLIST = TagKey.create(Registries.ENTITY_TYPE, modLoc("blacklist"));
 
-	public AggroIndicatorMod() {
-		IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
-		ModLoadingContext context = ModLoadingContext.get();
-		context.registerConfig(ModConfig.Type.COMMON, IndicatorConfig.commonSpec);
-		context.registerConfig(ModConfig.Type.CLIENT, IndicatorConfig.clientSpec);
+	public AggroIndicatorMod(IEventBus eventBus, Dist dist, ModContainer container) {
+		container.registerConfig(ModConfig.Type.COMMON, IndicatorConfig.commonSpec);
 
-		eventBus.addListener(this::onCommonSetup);
+		eventBus.addListener(PacketHandler::setupPackets);
 
-		MinecraftForge.EVENT_BUS.register(this);
-	}
+		NeoForge.EVENT_BUS.register(this);
 
-	private void onCommonSetup(final FMLCommonSetupEvent event) {
-		PacketHandler.init();
+		if (dist.isClient()) {
+			container.registerConfig(ModConfig.Type.CLIENT, IndicatorConfig.clientSpec);
+			container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+		}
 	}
 
 	// List to keep track of entities that have already been indicated as aggroed to prevent spamming packets for the same entity
@@ -58,8 +58,8 @@ public class AggroIndicatorMod {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onAggro(LivingChangeTargetEvent event) {
 		if (event.getEntity() instanceof Mob mob && !mob.level().isClientSide()) {
-			if (event.getNewTarget() instanceof Player player) {
-				if (IndicatorConfig.COMMON.initialAggro.get() && mob.getTarget() == event.getOriginalTarget()) return;
+			if (event.getNewAboutToBeSetTarget() instanceof Player player) {
+				if (IndicatorConfig.COMMON.initialAggro.get() && mob.getTarget() == player) return;
 				if (isInvalid(mob.getType())) return;
 
 				if (player instanceof ServerPlayer serverPlayer && !(player instanceof FakePlayer)) {
@@ -67,19 +67,13 @@ public class AggroIndicatorMod {
 						return;
 					}
 					int duration = mob.getType().is(UNFADING) ? Integer.MAX_VALUE : IndicatorConfig.COMMON.indicatorDuration.get();
-					PacketHandler.CHANNEL.send(
-							PacketDistributor.PLAYER.with(() -> serverPlayer),
-							new IndicateAggroPacket(mob.getId(), duration)
-					);
+					PacketDistributor.sendToPlayer(serverPlayer, new IndicateAggroPayload(mob.getId(), duration));
 					knownAggroEntities.add(mob.getId());
 				}
 			} else {
-				if (event.getNewTarget() == null && mob.getTarget() instanceof Player player) {
+				if (event.getNewAboutToBeSetTarget() == null && mob.getTarget() instanceof Player player) {
 					if (player instanceof ServerPlayer serverPlayer && !(player instanceof FakePlayer)) {
-						PacketHandler.CHANNEL.send(
-								PacketDistributor.PLAYER.with(() -> serverPlayer),
-								new IndicateAggroPacket(mob.getId(), 0)
-						);
+						PacketDistributor.sendToPlayer(serverPlayer, new RemoveAggroPayload(mob.getId()));
 						knownAggroEntities.removeIf(id -> id == mob.getId());
 					}
 				}
@@ -105,5 +99,9 @@ public class AggroIndicatorMod {
 	 */
 	public static void finishAggro(int entityID) {
 		knownAggroEntities.removeIf(id -> id == entityID);
+	}
+
+	public static ResourceLocation modLoc(String path) {
+		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
 	}
 }

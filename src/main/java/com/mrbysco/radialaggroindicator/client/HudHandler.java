@@ -3,6 +3,7 @@ package com.mrbysco.radialaggroindicator.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mrbysco.radialaggroindicator.AggroIndicatorMod;
 import com.mrbysco.radialaggroindicator.config.IndicatorConfig;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -13,18 +14,17 @@ import net.minecraft.util.FastColor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = AggroIndicatorMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = Dist.CLIENT, modid = AggroIndicatorMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class HudHandler {
 	protected static final List<HudHandler.AggroIndicator> activeIndicators = new ArrayList<>();
 
@@ -58,21 +58,17 @@ public class HudHandler {
 	}
 
 	@SubscribeEvent
-	public static void onRegisterOverlay(RegisterGuiOverlaysEvent event) {
-		event.registerBelowAll("aggro_indicator", HudHandler::onRenderOverlay);
+	public static void onRegisterOverlay(RegisterGuiLayersEvent event) {
+		event.registerBelowAll(AggroIndicatorMod.modLoc("aggro_indicator"), HudHandler::onRenderOverlay);
 	}
 
 	/**
 	 * Displays an aggro arrow at pointing towards the entity that aggroed the player. The arrow will disappear after 4 seconds or when the entity dies.
 	 *
-	 * @param forgeGui     The ForgeGui instance, used to get the Minecraft instance and other GUI related information.
 	 * @param guiGraphics  The GuiGraphics instance, used to draw the arrow and other graphics on the screen.
-	 * @param partialTick  The partial tick time, used for smooth rendering of the arrow and other graphics.
-	 * @param screenWidth  The width of the screen, used to position the arrow correctly on the screen.
-	 * @param screenHeight The height of the screen, used to position the arrow correctly on the screen.
+	 * @param deltaTracker  The DeltaTracker instance, used to track time between frames for smooth animations and timing.
 	 */
-	protected static void onRenderOverlay(ForgeGui forgeGui, GuiGraphics guiGraphics,
-	                                      float partialTick, int screenWidth, int screenHeight) {
+	private static void onRenderOverlay(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
 		Minecraft minecraft = Minecraft.getInstance();
 		ClientLevel level = minecraft.level;
 		if (level != null) {
@@ -83,7 +79,7 @@ public class HudHandler {
 				if (!indicator.isAlive()) continue;
 				if (IndicatorConfig.COMMON.hideInView.get() && indicator.hideVisible(minecraft.levelRenderer.getFrustum())) return;
 
-				renderIndicator(guiGraphics, minecraft, player, indicator, screenWidth, screenHeight);
+				renderIndicator(guiGraphics, minecraft, player, indicator);
 			}
 		}
 	}
@@ -95,12 +91,9 @@ public class HudHandler {
 	 * @param minecraft    Minecraft instance for font access.
 	 * @param player       The client player.
 	 * @param indicator    The aggro indicator to render.
-	 * @param screenWidth  Screen width.
-	 * @param screenHeight Screen height.
 	 */
 	private static void renderIndicator(GuiGraphics guiGraphics, Minecraft minecraft,
-	                                    Player player, AggroIndicator indicator,
-	                                    int screenWidth, int screenHeight) {
+	                                    Player player, AggroIndicator indicator) {
 		final Entity target = indicator.getEntity();
 		final int tickCount = indicator.tickCount();
 		final int ticks = indicator.ticks();
@@ -110,8 +103,8 @@ public class HudHandler {
 
 		double angle = calculateScreenAngle(player, dx, dz);
 
-		int centerX = screenWidth / 2;
-		int centerY = screenHeight / 2;
+		int centerX = guiGraphics.guiWidth() / 2;
+		int centerY = guiGraphics.guiHeight() / 2;
 
 		double scale = IndicatorConfig.CLIENT.radiusScale.get();
 

@@ -1,16 +1,16 @@
 package com.mrbysco.radialaggroindicator.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class IndicatorConfig {
 	public static class Common {
-		public final ForgeConfigSpec.BooleanValue initialAggro;
-		public final ForgeConfigSpec.IntValue indicatorDuration;
-		public final ForgeConfigSpec.BooleanValue hideInView;
-		public final ForgeConfigSpec.BooleanValue invertBlacklist;
+		public final ModConfigSpec.BooleanValue initialAggro;
+		public final ModConfigSpec.IntValue indicatorDuration;
+		public final ModConfigSpec.BooleanValue hideInView;
+		public final ModConfigSpec.BooleanValue invertBlacklist;
 
-		Common(ForgeConfigSpec.Builder builder) {
+		Common(ModConfigSpec.Builder builder) {
 			//General settings
 			builder.comment("General settings")
 					.push("general");
@@ -35,28 +35,28 @@ public class IndicatorConfig {
 		}
 	}
 
-	public static final ForgeConfigSpec commonSpec;
+	public static final ModConfigSpec commonSpec;
 	public static final Common COMMON;
 
 	static {
-		final Pair<Common, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(Common::new);
+		final Pair<Common, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(Common::new);
 		commonSpec = specPair.getRight();
 		COMMON = specPair.getLeft();
 	}
 
 	public static class Client {
 
-		public final ForgeConfigSpec.DoubleValue radiusScale;
-		public final ForgeConfigSpec.ConfigValue<String> symbol;
-		public final ForgeConfigSpec.IntValue symbolColorRed;
-		public final ForgeConfigSpec.IntValue symbolColorGreen;
-		public final ForgeConfigSpec.IntValue symbolColorBlue;
-		public final ForgeConfigSpec.BooleanValue symbolRotationLock;
-		public final ForgeConfigSpec.DoubleValue symbolScale;
-		public final ForgeConfigSpec.BooleanValue fadeIn;
-		public final ForgeConfigSpec.BooleanValue fadeOut;
+		public final ModConfigSpec.DoubleValue radiusScale;
+		public final ModConfigSpec.ConfigValue<String> symbol;
+		public final ModConfigSpec.IntValue symbolColorRed;
+		public final ModConfigSpec.IntValue symbolColorGreen;
+		public final ModConfigSpec.IntValue symbolColorBlue;
+		public final ModConfigSpec.BooleanValue symbolRotationLock;
+		public final ModConfigSpec.DoubleValue symbolScale;
+		public final ModConfigSpec.BooleanValue fadeIn;
+		public final ModConfigSpec.BooleanValue fadeOut;
 
-		Client(ForgeConfigSpec.Builder builder) {
+		Client(ModConfigSpec.Builder builder) {
 			//Client settings
 			builder.comment("Client settings")
 					.push("client");
@@ -101,11 +101,11 @@ public class IndicatorConfig {
 		}
 	}
 
-	public static final ForgeConfigSpec clientSpec;
+	public static final ModConfigSpec clientSpec;
 	public static final Client CLIENT;
 
 	static {
-		final Pair<Client, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(Client::new);
+		final Pair<Client, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(Client::new);
 		clientSpec = specPair.getRight();
 		CLIENT = specPair.getLeft();
 	}
