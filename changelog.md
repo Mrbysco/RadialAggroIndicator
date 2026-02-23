@@ -1,1 +1,1 @@
-* Initial release
+* Fix `hideInView` config option
