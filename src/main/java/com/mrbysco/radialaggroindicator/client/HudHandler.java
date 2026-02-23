@@ -1,6 +1,5 @@
 package com.mrbysco.radialaggroindicator.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mrbysco.radialaggroindicator.AggroIndicatorMod;
 import com.mrbysco.radialaggroindicator.config.IndicatorConfig;
 import net.minecraft.client.DeltaTracker;
@@ -10,7 +9,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -18,13 +17,13 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import org.joml.Quaternionf;
+import org.joml.Matrix3x2fStack;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EventBusSubscriber(value = Dist.CLIENT, modid = AggroIndicatorMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = Dist.CLIENT, modid = AggroIndicatorMod.MOD_ID)
 public class HudHandler {
 	protected static final List<HudHandler.AggroIndicator> activeIndicators = new ArrayList<>();
 
@@ -66,7 +65,7 @@ public class HudHandler {
 	 * Displays an aggro arrow at pointing towards the entity that aggroed the player. The arrow will disappear after 4 seconds or when the entity dies.
 	 *
 	 * @param guiGraphics  The GuiGraphics instance, used to draw the arrow and other graphics on the screen.
-	 * @param deltaTracker  The DeltaTracker instance, used to track time between frames for smooth animations and timing.
+	 * @param deltaTracker The DeltaTracker instance, used to track time between frames for smooth animations and timing.
 	 */
 	private static void onRenderOverlay(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
 		Minecraft minecraft = Minecraft.getInstance();
@@ -77,7 +76,8 @@ public class HudHandler {
 
 			for (AggroIndicator indicator : activeIndicators) {
 				if (!indicator.isAlive()) continue;
-				if (IndicatorConfig.COMMON.hideInView.get() && indicator.hideVisible(minecraft.levelRenderer.getFrustum())) return;
+				if (IndicatorConfig.COMMON.hideInView.get() && indicator.hideVisible(minecraft.levelRenderer.getCapturedFrustum()))
+					return;
 
 				renderIndicator(guiGraphics, minecraft, player, indicator);
 			}
@@ -87,10 +87,10 @@ public class HudHandler {
 	/**
 	 * Renders a single aggro indicator arrow for the given entity.
 	 *
-	 * @param guiGraphics  Graphics instance used for rendering.
-	 * @param minecraft    Minecraft instance for font access.
-	 * @param player       The client player.
-	 * @param indicator    The aggro indicator to render.
+	 * @param guiGraphics Graphics instance used for rendering.
+	 * @param minecraft   Minecraft instance for font access.
+	 * @param player      The client player.
+	 * @param indicator   The aggro indicator to render.
 	 */
 	private static void renderIndicator(GuiGraphics guiGraphics, Minecraft minecraft,
 	                                    Player player, AggroIndicator indicator) {
@@ -117,7 +117,7 @@ public class HudHandler {
 		final int red = IndicatorConfig.CLIENT.symbolColorRed.get();
 		final int green = IndicatorConfig.CLIENT.symbolColorGreen.get();
 		final int blue = IndicatorConfig.CLIENT.symbolColorBlue.get();
-		int color = FastColor.ARGB32.color(
+		int color = ARGB.color(
 				calculateAlpha(dx, dz, ticks, tickCount),
 				red, green, blue
 		);
@@ -197,24 +197,24 @@ public class HudHandler {
 	 */
 	private static void drawArrow(GuiGraphics guiGraphics, Minecraft minecraft,
 	                              int x, int y, double angle, int color) {
-		PoseStack poseStack = guiGraphics.pose();
-		poseStack.pushPose();
+		Matrix3x2fStack poseStack = guiGraphics.pose();
+		poseStack.pushMatrix();
 
-		poseStack.translate(x, y, 0);
+		poseStack.translate(x, y);
 		boolean rotationLock = IndicatorConfig.CLIENT.symbolRotationLock.get();
 		if (!rotationLock) {
-			poseStack.mulPose(new Quaternionf().rotateZ((float) angle));
+			poseStack.rotate((float) angle);
 		}
 
 		float scale = IndicatorConfig.CLIENT.symbolScale.get().floatValue();
 		if (scale != 1.0F) {
-			poseStack.scale(scale, scale, scale);
+			poseStack.scale(scale);
 		}
 
 		String symbol = IndicatorConfig.CLIENT.symbol.get();
 		guiGraphics.drawString(minecraft.font, Component.literal(symbol), -3, -3, color);
 
-		poseStack.popPose();
+		poseStack.popMatrix();
 	}
 
 	protected static final class AggroIndicator {

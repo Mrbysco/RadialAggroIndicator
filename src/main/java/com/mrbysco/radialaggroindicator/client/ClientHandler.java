@@ -7,9 +7,9 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-@EventBusSubscriber(value = Dist.CLIENT, modid = AggroIndicatorMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(value = Dist.CLIENT, modid = AggroIndicatorMod.MOD_ID)
 public class ClientHandler {
 
 	@SubscribeEvent
@@ -22,7 +22,7 @@ public class ClientHandler {
 					mc.level.dimension() != indicator.dimension()
 			) {
 				if (mc.getConnection() != null) {
-					PacketDistributor.sendToServer(new AggroFinishedPayload(indicator.entityId()));
+					ClientPacketDistributor.sendToServer(new AggroFinishedPayload(indicator.entityId()));
 				}
 				return true;
 			}

@@ -6,7 +6,7 @@ import com.mrbysco.radialaggroindicator.network.PacketHandler;
 import com.mrbysco.radialaggroindicator.network.message.IndicateAggroPayload;
 import com.mrbysco.radialaggroindicator.network.message.RemoveAggroPayload;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
@@ -101,7 +101,7 @@ public class AggroIndicatorMod {
 		knownAggroEntities.removeIf(id -> id == entityID);
 	}
 
-	public static ResourceLocation modLoc(String path) {
-		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+	public static Identifier modLoc(String path) {
+		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 }
