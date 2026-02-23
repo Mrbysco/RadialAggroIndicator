@@ -5,6 +5,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Tell the client that an entity has become aggressive towards them, prompting the client to display the aggro indicator for that entity.
@@ -18,6 +19,7 @@ public record IndicateAggroPayload(int entityID, int durationTicks) implements C
 			IndicateAggroPayload::new);
 	public static final CustomPacketPayload.Type<IndicateAggroPayload> ID = new CustomPacketPayload.Type<>(AggroIndicatorMod.modLoc("indicate_aggro"));
 
+	@NotNull
 	@Override
 	public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
 		return ID;
